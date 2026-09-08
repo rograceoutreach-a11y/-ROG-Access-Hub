@@ -1,4 +1,4 @@
-<!DOCTYPE html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -310,6 +310,7 @@ button{font-family:var(--ff-b);cursor:pointer}
     <a href="#" onclick="event.preventDefault();nav('books')" data-view="books">📚 Books</a>
     <a href="#" onclick="event.preventDefault();nav('links')" data-view="links" class="hide-sm">🔗 Links</a>
     <a href="https://reflectionsofgracebiblestudies.netlify.app/" target="_blank" rel="noopener">Training Portal</a>
+    <a href="https://reflectionsofgraceministryportal.netlify.app/" target="_blank" rel="noopener">Ministry Portal</a>
     <a href="https://reflectionsofgracebiblestudies.netlify.app/#/enroll" target="_blank" rel="noopener" class="nav-gold">Enroll Free</a>
     <a href="https://donate.stripe.com/9B600caNR32e2ne5hR9EI00" target="_blank" rel="noopener" class="nav-green">❤️ Give</a>
   </div>
@@ -355,6 +356,649 @@ button{font-family:var(--ff-b);cursor:pointer}
 </footer>
 
 <script>
+
+
+/* ════════════════════════════════════════════════════════
+   ROG UNIFIED CROSS-PORTAL INTEGRATION
+   Every phase · unit · tab · link → same study content
+   across Training Portal, Access Hub, Ministry Portal
+   ════════════════════════════════════════════════════════ */
+
+var ROG = {
+  sites: {
+    training : 'https://reflectionsofgracebiblestudies.netlify.app',
+    hub      : 'https://rog-access-hub.netlify.app',
+    ministry : 'https://reflectionsofgraceministryportal.netlify.app'
+  },
+  github: {
+    org      : 'https://github.com/rograceoutreach-a11y',
+    training : 'https://github.com/rograceoutreach-a11y/Training-Portal',
+    hub      : 'https://github.com/rograceoutreach-a11y/-ROG-Access-Hub',
+    ministry : 'https://github.com/rograceoutreach-a11y/Reflections-of-Grace-Bible-Ministries'
+  },
+  phaseToBook: {
+    'phase07': {id:'praying', title:'Praying to Know Him, Praying From My Soul',   author:'Denise Ford-Walker', color:'#1B3A6B'},
+    'phase08': {id:'holding', title:'Holding On When It Is Destined to Be Yours',  author:'Denise Ford-Walker', color:'#0F5F5F'},
+    'phase09': {id:'mcminn',  title:'Psychology, Theology & Spirituality',          author:'Mark R. McMinn PhD', color:'#7B1A3A'},
+    'phase13': {research:true,title:'Galatians Research Archive — Six-Module Study',url:'#/research'}
+  },
+  media: [
+    {icon:'🎬', name:'BibleProject',                    tag:'Animated Biblical Scholarship',        url:'https://www.youtube.com/channel/UCVfwlh9XpX2Y_tQfjeln9QA', phases:null},
+    {icon:'🏛️', name:'Dallas Theological Seminary',     tag:'Free Seminary Courses',                url:'https://www.youtube.com/dallasseminary',                  phases:['phase10','phase11','phase13']},
+    {icon:'📚', name:'Ligonier — R.C. Sproul',          tag:'Romans & Galatians Series',            url:'https://learn.ligonier.org/series/galatians',             phases:['phase10','phase11','phase13']},
+    {icon:'📜', name:'Tyndale House Cambridge',          tag:'Evangelical Biblical Scholarship',     url:'https://www.youtube.com/@TyndaleHouse',                   phases:['phase10','phase11','phase12','phase13']},
+    {icon:'🎓', name:'Open Yale — New Testament',        tag:'Free University Lecture Series',       url:'https://oyc.yale.edu/religious-studies/rlst-152',         phases:['phase10','phase11','phase13']},
+    {icon:'⛏️', name:'Expedition Bible — Joel Kramer',  tag:'On-Site Biblical Archaeology',         url:'https://www.youtube.com/@ExpeditionBible',                phases:['phase10','phase11','phase12','phase13']},
+    {icon:'🏺', name:'British Museum',                   tag:'Dead Sea Scrolls & Ancient Israel',    url:'https://www.youtube.com/@britishmuseum',                  phases:['phase10','phase11','phase12','phase13']},
+    {icon:'📜', name:'Dead Sea Scrolls Digital Library', tag:'Israel Antiquities Authority',         url:'https://www.deadseascrolls.org.il/',                      phases:['phase10','phase11','phase12','phase13']},
+    {icon:'💬', name:'Mike Winger — BibleThinker',       tag:'Verse-by-Verse Bible Study',           url:'https://www.youtube.com/@MikeWinger',                    phases:['phase10','phase11','phase13']},
+    {icon:'⚖️', name:'Cross Examined — Frank Turek',    tag:'Apologetics & Campus Debates',         url:'https://www.youtube.com/@CrossExamined_org',              phases:['phase10','phase11','phase13']},
+    {icon:'🎯', name:'The Gospel Coalition',             tag:'Scholarly Teaching & Discussion',      url:'https://www.thegospelcoalition.org/',                     phases:['phase10','phase11','phase12','phase13']},
+    {icon:'📖', name:'Priscilla Shirer',                 tag:'Deep Bible Study & Discernment',       url:'https://www.youtube.com/@PriscillaShirer',               phases:['phase07','phase08','phase12']},
+    {icon:'🧠', name:'CCEF',                             tag:'Faith-Psychology Integration',         url:'https://www.ccef.org/resources/',                         phases:['phase03','phase09']},
+    {icon:'🎤', name:'Sean McDowell',                    tag:'Scholar Interviews & Apologetics',     url:'https://www.youtube.com/@SeanMcDowell',                   phases:null},
+    {icon:'📄', name:'Ancient Jew Review',               tag:'Second Temple Judaism Scholarship',    url:'https://www.ancientjewreview.com/',                       phases:['phase10','phase11','phase13']}
+  ],
+
+  /* Return media items relevant to a phase */
+  mediaForPhase: function(phaseId) {
+    return this.media.filter(function(m){ return !m.phases || m.phases.indexOf(phaseId)>=0; });
+  },
+
+  /* Build a small link pill */
+  pill: function(label, href, external) {
+    var s = 'display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;transition:opacity .15s;';
+    s += 'background:rgba(201,146,58,.12);border:1px solid rgba(201,146,58,.28);color:rgba(253,243,224,.85)';
+    return '<a href="'+href+'"'+(external?' target="_blank" rel="noopener"':'')+' style="'+s+'">'+label+'</a>';
+  },
+
+  /* Full cross-site nav strip — shown at top of every page section */
+  navStrip: function(phaseId) {
+    var book = phaseId ? this.phaseToBook[phaseId] : null;
+    var bookBtn = '';
+    if (book && book.id)       bookBtn = this.pill('📚 '+book.title.substring(0,26)+'…', '#/books', false);
+    if (book && book.research) bookBtn = this.pill('📜 Galatians Research', '#/research', false);
+    return '<div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center;'
+      +'padding:10px 20px;background:rgba(201,146,58,.07);border-bottom:1px solid rgba(201,146,58,.18)'
+      +';position:sticky;top:68px;z-index:90;backdrop-filter:blur(10px)">'
+      +'<span style="font-size:10px;color:rgba(253,243,224,.35);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-right:4px">Also:</span>'
+      + this.pill('🏠 Dashboard',  '#/',         false)
+      + this.pill('📖 Research',   '#/research', false)
+      + this.pill('📚 Books',      '#/books',    false)
+      + bookBtn
+      + this.pill('🌐 Access Hub', this.sites.hub,      true)
+      + this.pill('⛪ Ministry',   this.sites.ministry,  true)
+      + this.pill('⚙️ GitHub',     this.github.org,      true)
+      +'</div>';
+  },
+
+  /* Full cross-site footer */
+  footer: function() {
+    var p = function(label,href,ext){
+      return '<a href="'+href+'"'+(ext?' target="_blank" rel="noopener"':'')+' style="font-size:13px;color:rgba(253,243,224,.65);text-decoration:none;display:block;padding:3px 0">'+label+'</a>';
+    };
+    return '<footer style="background:rgba(20,4,6,.6);border-top:1px solid rgba(201,146,58,.2);margin-top:48px;padding:32px 24px 48px">'
+      +'<div style="max-width:900px;margin:0 auto">'
+      +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:24px 16px;margin-bottom:24px">'
+
+      +'<div><div style="font-size:11px;font-weight:700;color:rgba(201,146,58,.9);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">📚 Curriculum</div>'
+      +p('Training Portal Home','#/',false)
+      +p('All 13 Phases','#/phases',false)
+      +p('Book Curriculum','#/books',false)
+      +p('Research Archive','#/research',false)
+      +p('Enroll Free','#/enroll',false)
+      +'</div>'
+
+      +'<div><div style="font-size:11px;font-weight:700;color:rgba(201,146,58,.9);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">🌐 Portals</div>'
+      +p('Access Hub ↗', 'https://rog-access-hub.netlify.app', true)
+      +p('Ministry Portal ↗', 'https://reflectionsofgraceministryportal.netlify.app', true)
+      +p('Media Links ↗', 'https://rog-access-hub.netlify.app', true)
+      +p('Give / Donate','#/donate',false)
+      +p('Contact Us','#/connect',false)
+      +'</div>'
+
+      +'<div><div style="font-size:11px;font-weight:700;color:rgba(201,146,58,.9);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">⚙️ GitHub Source</div>'
+      +p('Training-Portal ↗', 'https://github.com/rograceoutreach-a11y/Training-Portal', true)
+      +p('ROG-Access-Hub ↗',  'https://github.com/rograceoutreach-a11y/-ROG-Access-Hub', true)
+      +p('Ministry-Portal ↗', 'https://github.com/rograceoutreach-a11y/Reflections-of-Grace-Bible-Ministries', true)
+      +p('All Repos ↗',       'https://github.com/rograceoutreach-a11y', true)
+      +'</div>'
+
+      +'<div><div style="font-size:11px;font-weight:700;color:rgba(201,146,58,.9);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">📖 Study by Phase</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:5px">'
+      +[1,2,3,4,5,6,7,8,9,10,11,12,13].map(function(n){
+        var pid='phase'+String(n).padStart(2,'0');
+        return '<a href="#/phase/'+pid+'" style="font-size:11px;padding:3px 8px;background:rgba(201,146,58,.1);border:1px solid rgba(201,146,58,.2);border-radius:4px;color:rgba(253,243,224,.7);text-decoration:none">'+String(n).padStart(2,'0')+'</a>';
+      }).join('')
+      +'</div></div>'
+
+      +'</div>'
+      +'<div style="border-top:1px solid rgba(253,243,224,.07);padding-top:14px;font-size:12px;color:rgba(253,243,224,.3);text-align:center">'
+      +'Thomas E. Walker, MDiv. &amp; Denise Ford-Walker &middot; Moreno Valley, CA &middot; 501c3 Nonprofit &middot; rograceoutreach@gmail.com'
+      +'</div></div></footer>';
+  },
+
+  /* Resources tab content — appears on every lesson unit */
+  resourcesTab: function(phaseId, unitIdx, en) {
+    var self = this;
+    var book  = this.phaseToBook[phaseId];
+    var media = this.mediaForPhase(phaseId);
+    var bib   = en && en.biblical    ? en.biblical    : [];
+    var schol = en && en.scholarly   ? en.scholarly   : [];
+    var vids  = en && en.videos      ? en.videos      : [];
+
+    var card = function(content) {
+      return '<div style="background:rgba(253,243,224,.04);border:1px solid rgba(253,243,224,.1);border-radius:10px;padding:14px 16px;margin-bottom:12px">'+content+'</div>';
+    };
+    var label = function(txt) {
+      return '<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(201,146,58,.8);margin-bottom:10px">'+txt+'</div>';
+    };
+
+    var html = '<div style="display:flex;flex-direction:column;gap:0">';
+
+    /* ── Connected Resources bar ── */
+    html += card(
+      label('🔗 Connected Resources — Open on any portal')
+      +'<div style="display:flex;flex-wrap:wrap;gap:7px">'
+      + self.pill('📖 Research Archive',  '#/research',        false)
+      + self.pill('📚 Book Curriculum',   '#/books',           false)
+      + self.pill('🌐 Access Hub',        self.sites.hub,      true)
+      + self.pill('⛪ Ministry Portal',   self.sites.ministry, true)
+      + self.pill('⚙️ GitHub',           self.github.org,     true)
+      +'</div>'
+    );
+
+    /* ── Training Portal deep links for this phase ── */
+    var phaseNum = phaseId.replace('phase','');
+    html += card(
+      label('📖 Study This Phase on All Portals')
+      +'<div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px">'
+      + self.pill('📖 Phase '+phaseNum+' — Training Portal', '#/phase/'+phaseId, false)
+      + self.pill('🌐 Phase '+phaseNum+' — Access Hub',      self.sites.hub,     true)
+      +'</div>'
+      +'<div style="font-size:12px;color:rgba(253,243,224,.5)">Both portals contain the same 13 phases with full quiz, discussion, and resource tabs.</div>'
+    );
+
+    /* ── Book curriculum cross-link ── */
+    if (book && book.id) {
+      html += card(
+        label('📚 Corresponding Book — Phase '+phaseNum)
+        +'<div style="font-size:14px;font-weight:600;color:rgba(253,243,224,.9);margin-bottom:3px">'+book.title+'</div>'
+        +'<div style="font-size:12px;color:rgba(253,243,224,.55);margin-bottom:10px">by '+book.author+'</div>'
+        +'<a href="#/books" style="display:inline-block;padding:7px 14px;background:rgba(201,146,58,.85);color:#1a0507;border-radius:7px;font-size:12px;font-weight:700;text-decoration:none">Open Book Curriculum &#8594;</a>'
+      );
+    }
+    if (book && book.research) {
+      html += card(
+        label('📜 Research Archive — Phase 13 Galatians')
+        +'<div style="font-size:14px;font-weight:600;color:rgba(253,243,224,.9);margin-bottom:10px">Galatians: Faith, Freedom &amp; Life in the Spirit — Six-Module Study</div>'
+        +'<a href="#/research" style="display:inline-block;padding:7px 14px;background:rgba(201,146,58,.85);color:#1a0507;border-radius:7px;font-size:12px;font-weight:700;text-decoration:none">Open Research Archive &#8594;</a>'
+      );
+    }
+
+    /* ── Biblical references ── */
+    if (bib.length) {
+      html += card(
+        label('📖 Biblical References')
+        +'<div style="display:flex;flex-direction:column;gap:6px">'
+        +bib.map(function(r){
+          return '<div style="padding:8px 12px;border-left:3px solid rgba(201,146,58,.6);background:rgba(201,146,58,.05);border-radius:0 6px 6px 0">'
+            +'<div style="font-size:13px;font-weight:600;color:rgba(253,243,224,.88)">'+(r.ref||r.title||r.name||'')+'</div>'
+            +(r.note?'<div style="font-size:11px;color:rgba(253,243,224,.5);margin-top:2px">'+r.note+'</div>':'')
+            +'</div>';
+        }).join('')
+        +'</div>'
+      );
+    }
+
+    /* ── Scholarly resources ── */
+    if (schol.length) {
+      html += card(
+        label('🏛️ Scholarly & Extra-Biblical Resources')
+        +'<div style="display:flex;flex-direction:column;gap:6px">'
+        +schol.map(function(r){
+          var url = r.url||r.link||'';
+          return '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;background:rgba(253,243,224,.03);border-radius:6px">'
+            +'<span style="font-size:18px;flex-shrink:0">'+(r.icon||'📄')+'</span>'
+            +'<div style="flex:1">'
+            +'<div style="font-size:13px;font-weight:600;color:rgba(253,243,224,.88)">'+(r.title||r.name||'')+'</div>'
+            +(r.meta?'<div style="font-size:11px;color:rgba(253,243,224,.45);margin-top:2px">'+r.meta+'</div>':'')
+            +(url?'<a href="'+url+'" target="_blank" rel="noopener" style="font-size:11px;color:rgba(201,146,58,.8);text-decoration:none;margin-top:4px;display:inline-block">Open &#8599;</a>':'')
+            +'</div></div>';
+        }).join('')
+        +'</div>'
+      );
+    }
+
+    /* ── Media links for this phase ── */
+    if (media.length) {
+      html += card(
+        label('🎬 Media & Scholarly Video — Phase '+phaseNum)
+        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+        +'<div style="font-size:12px;color:rgba(253,243,224,.5)">Free academic and ministry video resources matched to this phase</div>'
+        +'<a href="'+self.sites.hub+'" target="_blank" style="font-size:11px;color:rgba(201,146,58,.8);text-decoration:none;white-space:nowrap">See all in Access Hub &#8599;</a>'
+        +'</div>'
+        +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:7px">'
+        +media.slice(0,8).map(function(m){
+          return '<a href="'+m.url+'" target="_blank" rel="noopener" style="display:flex;align-items:flex-start;gap:8px;padding:9px;background:rgba(253,243,224,.04);border:1px solid rgba(253,243,224,.08);border-radius:8px;text-decoration:none">'
+            +'<span style="font-size:16px;flex-shrink:0">'+m.icon+'</span>'
+            +'<div><div style="font-size:11px;font-weight:600;color:rgba(253,243,224,.85)">'+m.name+'</div>'
+            +'<div style="font-size:10px;color:rgba(253,243,224,.45);margin-top:1px">'+m.tag+'</div></div></a>';
+        }).join('')
+        +'</div>'
+      );
+    }
+
+    /* ── Video resources from ENRICHMENT ── */
+    if (vids.length) {
+      html += card(
+        label('▶️ ROG Video Teaching — Phase '+phaseNum)
+        +'<div style="display:flex;flex-direction:column;gap:6px">'
+        +vids.map(function(v){
+          return '<a href="'+(v.url||v.link||'#')+'" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:rgba(253,243,224,.03);border-radius:7px;text-decoration:none">'
+            +'<span style="font-size:18px">&#9654;&#65039;</span>'
+            +'<div><div style="font-size:13px;font-weight:600;color:rgba(253,243,224,.88)">'+(v.title||v.name||'')+'</div>'
+            +'<div style="font-size:11px;color:rgba(253,243,224,.45)">'+(v.meta||'')+'</div></div></a>';
+        }).join('')
+        +'</div>'
+      );
+    }
+
+    /* ── GitHub repositories ── */
+    html += card(
+      label('⚙️ GitHub Repositories — Source Code')
+      +'<div style="display:flex;flex-direction:column;gap:6px">'
+      +'<a href="'+self.github.training+'" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(253,243,224,.03);border-radius:7px;text-decoration:none">'
+      +'<span style="font-size:16px">⚙️</span>'
+      +'<div><div style="font-size:12px;font-weight:600;color:rgba(253,243,224,.85)">Training-Portal</div>'
+      +'<div style="font-size:11px;color:rgba(253,243,224,.45)">Bible Studies curriculum — all 13 phases, book curriculum, research</div></div></a>'
+      +'<a href="'+self.github.hub+'" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(253,243,224,.03);border-radius:7px;text-decoration:none">'
+      +'<span style="font-size:16px">⚙️</span>'
+      +'<div><div style="font-size:12px;font-weight:600;color:rgba(253,243,224,.85)">ROG-Access-Hub</div>'
+      +'<div style="font-size:11px;color:rgba(253,243,224,.45)">Study hub — phases, lessons, media links, book curriculum</div></div></a>'
+      +'<a href="'+self.github.ministry+'" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(253,243,224,.03);border-radius:7px;text-decoration:none">'
+      +'<span style="font-size:16px">⚙️</span>'
+      +'<div><div style="font-size:12px;font-weight:600;color:rgba(253,243,224,.85)">Ministry-Portal</div>'
+      +'<div style="font-size:11px;color:rgba(253,243,224,.45)">Ministry website — vision, connect, donate, enroll</div></div></a>'
+      +'</div>'
+    );
+
+    html += '</div>';
+    return html;
+  }
+};
+
+
+
+/* ════════════════════════════════════════════════════════
+   ROG UNIFIED CROSS-PORTAL INTEGRATION
+   Every phase · unit · tab · link → same study content
+   across Training Portal, Access Hub, Ministry Portal
+   ════════════════════════════════════════════════════════ */
+
+var ROG = {
+  sites: {
+    training : 'https://reflectionsofgracebiblestudies.netlify.app',
+    hub      : 'https://rog-access-hub.netlify.app',
+    ministry : 'https://reflectionsofgraceministryportal.netlify.app'
+  },
+  github: {
+    org      : 'https://github.com/rograceoutreach-a11y',
+    training : 'https://github.com/rograceoutreach-a11y/Training-Portal',
+    hub      : 'https://github.com/rograceoutreach-a11y/-ROG-Access-Hub',
+    ministry : 'https://github.com/rograceoutreach-a11y/Reflections-of-Grace-Bible-Ministries'
+  },
+  phaseToBook: {
+    'phase07': {id:'praying', title:'Praying to Know Him, Praying From My Soul',   author:'Denise Ford-Walker', color:'#1B3A6B'},
+    'phase08': {id:'holding', title:'Holding On When It Is Destined to Be Yours',  author:'Denise Ford-Walker', color:'#0F5F5F'},
+    'phase09': {id:'mcminn',  title:'Psychology, Theology & Spirituality',          author:'Mark R. McMinn PhD', color:'#7B1A3A'},
+    'phase13': {research:true,title:'Galatians Research Archive — Six-Module Study',url:'#/research'}
+  },
+  media: [
+    {icon:'🎬', name:'BibleProject',                    tag:'Animated Biblical Scholarship',        url:'https://www.youtube.com/channel/UCVfwlh9XpX2Y_tQfjeln9QA', phases:null},
+    {icon:'🏛️', name:'Dallas Theological Seminary',     tag:'Free Seminary Courses',                url:'https://www.youtube.com/dallasseminary',                  phases:['phase10','phase11','phase13']},
+    {icon:'📚', name:'Ligonier — R.C. Sproul',          tag:'Romans & Galatians Series',            url:'https://learn.ligonier.org/series/galatians',             phases:['phase10','phase11','phase13']},
+    {icon:'📜', name:'Tyndale House Cambridge',          tag:'Evangelical Biblical Scholarship',     url:'https://www.youtube.com/@TyndaleHouse',                   phases:['phase10','phase11','phase12','phase13']},
+    {icon:'🎓', name:'Open Yale — New Testament',        tag:'Free University Lecture Series',       url:'https://oyc.yale.edu/religious-studies/rlst-152',         phases:['phase10','phase11','phase13']},
+    {icon:'⛏️', name:'Expedition Bible — Joel Kramer',  tag:'On-Site Biblical Archaeology',         url:'https://www.youtube.com/@ExpeditionBible',                phases:['phase10','phase11','phase12','phase13']},
+    {icon:'🏺', name:'British Museum',                   tag:'Dead Sea Scrolls & Ancient Israel',    url:'https://www.youtube.com/@britishmuseum',                  phases:['phase10','phase11','phase12','phase13']},
+    {icon:'📜', name:'Dead Sea Scrolls Digital Library', tag:'Israel Antiquities Authority',         url:'https://www.deadseascrolls.org.il/',                      phases:['phase10','phase11','phase12','phase13']},
+    {icon:'💬', name:'Mike Winger — BibleThinker',       tag:'Verse-by-Verse Bible Study',           url:'https://www.youtube.com/@MikeWinger',                    phases:['phase10','phase11','phase13']},
+    {icon:'⚖️', name:'Cross Examined — Frank Turek',    tag:'Apologetics & Campus Debates',         url:'https://www.youtube.com/@CrossExamined_org',              phases:['phase10','phase11','phase13']},
+    {icon:'🎯', name:'The Gospel Coalition',             tag:'Scholarly Teaching & Discussion',      url:'https://www.thegospelcoalition.org/',                     phases:['phase10','phase11','phase12','phase13']},
+    {icon:'📖', name:'Priscilla Shirer',                 tag:'Deep Bible Study & Discernment',       url:'https://www.youtube.com/@PriscillaShirer',               phases:['phase07','phase08','phase12']},
+    {icon:'🧠', name:'CCEF',                             tag:'Faith-Psychology Integration',         url:'https://www.ccef.org/resources/',                         phases:['phase03','phase09']},
+    {icon:'🎤', name:'Sean McDowell',                    tag:'Scholar Interviews & Apologetics',     url:'https://www.youtube.com/@SeanMcDowell',                   phases:null},
+    {icon:'📄', name:'Ancient Jew Review',               tag:'Second Temple Judaism Scholarship',    url:'https://www.ancientjewreview.com/',                       phases:['phase10','phase11','phase13']}
+  ],
+
+  /* Return media items relevant to a phase */
+  mediaForPhase: function(phaseId) {
+    return this.media.filter(function(m){ return !m.phases || m.phases.indexOf(phaseId)>=0; });
+  },
+
+  /* Build a small link pill */
+  pill: function(label, href, external) {
+    var s = 'display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;transition:opacity .15s;';
+    s += 'background:rgba(201,146,58,.12);border:1px solid rgba(201,146,58,.28);color:rgba(253,243,224,.85)';
+    return '<a href="'+href+'"'+(external?' target="_blank" rel="noopener"':'')+' style="'+s+'">'+label+'</a>';
+  },
+
+  /* Full cross-site nav strip — shown at top of every page section */
+  navStrip: function(phaseId) {
+    var book = phaseId ? this.phaseToBook[phaseId] : null;
+    var bookBtn = '';
+    if (book && book.id)       bookBtn = this.pill('📚 '+book.title.substring(0,26)+'…', '#/books', false);
+    if (book && book.research) bookBtn = this.pill('📜 Galatians Research', '#/research', false);
+    return '<div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center;'
+      +'padding:10px 20px;background:rgba(201,146,58,.07);border-bottom:1px solid rgba(201,146,58,.18)'
+      +';position:sticky;top:68px;z-index:90;backdrop-filter:blur(10px)">'
+      +'<span style="font-size:10px;color:rgba(253,243,224,.35);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-right:4px">Also:</span>'
+      + this.pill('🏠 Dashboard',  '#/',         false)
+      + this.pill('📖 Research',   '#/research', false)
+      + this.pill('📚 Books',      '#/books',    false)
+      + bookBtn
+      + this.pill('🌐 Access Hub', this.sites.hub,      true)
+      + this.pill('⛪ Ministry',   this.sites.ministry,  true)
+      + this.pill('⚙️ GitHub',     this.github.org,      true)
+      +'</div>';
+  },
+
+  /* Full cross-site footer */
+  footer: function() {
+    var p = function(label,href,ext){
+      return '<a href="'+href+'"'+(ext?' target="_blank" rel="noopener"':'')+' style="font-size:13px;color:rgba(253,243,224,.65);text-decoration:none;display:block;padding:3px 0">'+label+'</a>';
+    };
+    return '<footer style="background:rgba(20,4,6,.6);border-top:1px solid rgba(201,146,58,.2);margin-top:48px;padding:32px 24px 48px">'
+      +'<div style="max-width:900px;margin:0 auto">'
+      +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:24px 16px;margin-bottom:24px">'
+
+      +'<div><div style="font-size:11px;font-weight:700;color:rgba(201,146,58,.9);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">📚 Curriculum</div>'
+      +p('Training Portal Home','#/',false)
+      +p('All 13 Phases','#/phases',false)
+      +p('Book Curriculum','#/books',false)
+      +p('Research Archive','#/research',false)
+      +p('Enroll Free','#/enroll',false)
+      +'</div>'
+
+      +'<div><div style="font-size:11px;font-weight:700;color:rgba(201,146,58,.9);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">🌐 Portals</div>'
+      +p('Access Hub ↗', 'https://rog-access-hub.netlify.app', true)
+      +p('Ministry Portal ↗', 'https://reflectionsofgraceministryportal.netlify.app', true)
+      +p('Media Links ↗', 'https://rog-access-hub.netlify.app', true)
+      +p('Give / Donate','#/donate',false)
+      +p('Contact Us','#/connect',false)
+      +'</div>'
+
+      +'<div><div style="font-size:11px;font-weight:700;color:rgba(201,146,58,.9);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">⚙️ GitHub Source</div>'
+      +p('Training-Portal ↗', 'https://github.com/rograceoutreach-a11y/Training-Portal', true)
+      +p('ROG-Access-Hub ↗',  'https://github.com/rograceoutreach-a11y/-ROG-Access-Hub', true)
+      +p('Ministry-Portal ↗', 'https://github.com/rograceoutreach-a11y/Reflections-of-Grace-Bible-Ministries', true)
+      +p('All Repos ↗',       'https://github.com/rograceoutreach-a11y', true)
+      +'</div>'
+
+      +'<div><div style="font-size:11px;font-weight:700;color:rgba(201,146,58,.9);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px">📖 Study by Phase</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:5px">'
+      +[1,2,3,4,5,6,7,8,9,10,11,12,13].map(function(n){
+        var pid='phase'+String(n).padStart(2,'0');
+        return '<a href="#/phase/'+pid+'" style="font-size:11px;padding:3px 8px;background:rgba(201,146,58,.1);border:1px solid rgba(201,146,58,.2);border-radius:4px;color:rgba(253,243,224,.7);text-decoration:none">'+String(n).padStart(2,'0')+'</a>';
+      }).join('')
+      +'</div></div>'
+
+      +'</div>'
+      +'<div style="border-top:1px solid rgba(253,243,224,.07);padding-top:14px;font-size:12px;color:rgba(253,243,224,.3);text-align:center">'
+      +'Thomas E. Walker, MDiv. &amp; Denise Ford-Walker &middot; Moreno Valley, CA &middot; 501c3 Nonprofit &middot; rograceoutreach@gmail.com'
+      +'</div></div></footer>';
+  },
+
+  /* Resources tab content — appears on every lesson unit */
+  resourcesTab: function(phaseId, unitIdx, en) {
+    var self = this;
+    var book  = this.phaseToBook[phaseId];
+    var media = this.mediaForPhase(phaseId);
+    var bib   = en && en.biblical    ? en.biblical    : [];
+    var schol = en && en.scholarly   ? en.scholarly   : [];
+    var vids  = en && en.videos      ? en.videos      : [];
+
+    var card = function(content) {
+      return '<div style="background:rgba(253,243,224,.04);border:1px solid rgba(253,243,224,.1);border-radius:10px;padding:14px 16px;margin-bottom:12px">'+content+'</div>';
+    };
+    var label = function(txt) {
+      return '<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(201,146,58,.8);margin-bottom:10px">'+txt+'</div>';
+    };
+
+    var html = '<div style="display:flex;flex-direction:column;gap:0">';
+
+    /* ── Connected Resources bar ── */
+    html += card(
+      label('🔗 Connected Resources — Open on any portal')
+      +'<div style="display:flex;flex-wrap:wrap;gap:7px">'
+      + self.pill('📖 Research Archive',  '#/research',        false)
+      + self.pill('📚 Book Curriculum',   '#/books',           false)
+      + self.pill('🌐 Access Hub',        self.sites.hub,      true)
+      + self.pill('⛪ Ministry Portal',   self.sites.ministry, true)
+      + self.pill('⚙️ GitHub',           self.github.org,     true)
+      +'</div>'
+    );
+
+    /* ── Training Portal deep links for this phase ── */
+    var phaseNum = phaseId.replace('phase','');
+    html += card(
+      label('📖 Study This Phase on All Portals')
+      +'<div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px">'
+      + self.pill('📖 Phase '+phaseNum+' — Training Portal', '#/phase/'+phaseId, false)
+      + self.pill('🌐 Phase '+phaseNum+' — Access Hub',      self.sites.hub,     true)
+      +'</div>'
+      +'<div style="font-size:12px;color:rgba(253,243,224,.5)">Both portals contain the same 13 phases with full quiz, discussion, and resource tabs.</div>'
+    );
+
+    /* ── Book curriculum cross-link ── */
+    if (book && book.id) {
+      html += card(
+        label('📚 Corresponding Book — Phase '+phaseNum)
+        +'<div style="font-size:14px;font-weight:600;color:rgba(253,243,224,.9);margin-bottom:3px">'+book.title+'</div>'
+        +'<div style="font-size:12px;color:rgba(253,243,224,.55);margin-bottom:10px">by '+book.author+'</div>'
+        +'<a href="#/books" style="display:inline-block;padding:7px 14px;background:rgba(201,146,58,.85);color:#1a0507;border-radius:7px;font-size:12px;font-weight:700;text-decoration:none">Open Book Curriculum &#8594;</a>'
+      );
+    }
+    if (book && book.research) {
+      html += card(
+        label('📜 Research Archive — Phase 13 Galatians')
+        +'<div style="font-size:14px;font-weight:600;color:rgba(253,243,224,.9);margin-bottom:10px">Galatians: Faith, Freedom &amp; Life in the Spirit — Six-Module Study</div>'
+        +'<a href="#/research" style="display:inline-block;padding:7px 14px;background:rgba(201,146,58,.85);color:#1a0507;border-radius:7px;font-size:12px;font-weight:700;text-decoration:none">Open Research Archive &#8594;</a>'
+      );
+    }
+
+    /* ── Biblical references ── */
+    if (bib.length) {
+      html += card(
+        label('📖 Biblical References')
+        +'<div style="display:flex;flex-direction:column;gap:6px">'
+        +bib.map(function(r){
+          return '<div style="padding:8px 12px;border-left:3px solid rgba(201,146,58,.6);background:rgba(201,146,58,.05);border-radius:0 6px 6px 0">'
+            +'<div style="font-size:13px;font-weight:600;color:rgba(253,243,224,.88)">'+(r.ref||r.title||r.name||'')+'</div>'
+            +(r.note?'<div style="font-size:11px;color:rgba(253,243,224,.5);margin-top:2px">'+r.note+'</div>':'')
+            +'</div>';
+        }).join('')
+        +'</div>'
+      );
+    }
+
+    /* ── Scholarly resources ── */
+    if (schol.length) {
+      html += card(
+        label('🏛️ Scholarly & Extra-Biblical Resources')
+        +'<div style="display:flex;flex-direction:column;gap:6px">'
+        +schol.map(function(r){
+          var url = r.url||r.link||'';
+          return '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;background:rgba(253,243,224,.03);border-radius:6px">'
+            +'<span style="font-size:18px;flex-shrink:0">'+(r.icon||'📄')+'</span>'
+            +'<div style="flex:1">'
+            +'<div style="font-size:13px;font-weight:600;color:rgba(253,243,224,.88)">'+(r.title||r.name||'')+'</div>'
+            +(r.meta?'<div style="font-size:11px;color:rgba(253,243,224,.45);margin-top:2px">'+r.meta+'</div>':'')
+            +(url?'<a href="'+url+'" target="_blank" rel="noopener" style="font-size:11px;color:rgba(201,146,58,.8);text-decoration:none;margin-top:4px;display:inline-block">Open &#8599;</a>':'')
+            +'</div></div>';
+        }).join('')
+        +'</div>'
+      );
+    }
+
+    /* ── Media links for this phase ── */
+    if (media.length) {
+      html += card(
+        label('🎬 Media & Scholarly Video — Phase '+phaseNum)
+        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+        +'<div style="font-size:12px;color:rgba(253,243,224,.5)">Free academic and ministry video resources matched to this phase</div>'
+        +'<a href="'+self.sites.hub+'" target="_blank" style="font-size:11px;color:rgba(201,146,58,.8);text-decoration:none;white-space:nowrap">See all in Access Hub &#8599;</a>'
+        +'</div>'
+        +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:7px">'
+        +media.slice(0,8).map(function(m){
+          return '<a href="'+m.url+'" target="_blank" rel="noopener" style="display:flex;align-items:flex-start;gap:8px;padding:9px;background:rgba(253,243,224,.04);border:1px solid rgba(253,243,224,.08);border-radius:8px;text-decoration:none">'
+            +'<span style="font-size:16px;flex-shrink:0">'+m.icon+'</span>'
+            +'<div><div style="font-size:11px;font-weight:600;color:rgba(253,243,224,.85)">'+m.name+'</div>'
+            +'<div style="font-size:10px;color:rgba(253,243,224,.45);margin-top:1px">'+m.tag+'</div></div></a>';
+        }).join('')
+        +'</div>'
+      );
+    }
+
+    /* ── Video resources from ENRICHMENT ── */
+    if (vids.length) {
+      html += card(
+        label('▶️ ROG Video Teaching — Phase '+phaseNum)
+        +'<div style="display:flex;flex-direction:column;gap:6px">'
+        +vids.map(function(v){
+          return '<a href="'+(v.url||v.link||'#')+'" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:rgba(253,243,224,.03);border-radius:7px;text-decoration:none">'
+            +'<span style="font-size:18px">&#9654;&#65039;</span>'
+            +'<div><div style="font-size:13px;font-weight:600;color:rgba(253,243,224,.88)">'+(v.title||v.name||'')+'</div>'
+            +'<div style="font-size:11px;color:rgba(253,243,224,.45)">'+(v.meta||'')+'</div></div></a>';
+        }).join('')
+        +'</div>'
+      );
+    }
+
+    /* ── GitHub repositories ── */
+    html += card(
+      label('⚙️ GitHub Repositories — Source Code')
+      +'<div style="display:flex;flex-direction:column;gap:6px">'
+      +'<a href="'+self.github.training+'" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(253,243,224,.03);border-radius:7px;text-decoration:none">'
+      +'<span style="font-size:16px">⚙️</span>'
+      +'<div><div style="font-size:12px;font-weight:600;color:rgba(253,243,224,.85)">Training-Portal</div>'
+      +'<div style="font-size:11px;color:rgba(253,243,224,.45)">Bible Studies curriculum — all 13 phases, book curriculum, research</div></div></a>'
+      +'<a href="'+self.github.hub+'" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(253,243,224,.03);border-radius:7px;text-decoration:none">'
+      +'<span style="font-size:16px">⚙️</span>'
+      +'<div><div style="font-size:12px;font-weight:600;color:rgba(253,243,224,.85)">ROG-Access-Hub</div>'
+      +'<div style="font-size:11px;color:rgba(253,243,224,.45)">Study hub — phases, lessons, media links, book curriculum</div></div></a>'
+      +'<a href="'+self.github.ministry+'" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(253,243,224,.03);border-radius:7px;text-decoration:none">'
+      +'<span style="font-size:16px">⚙️</span>'
+      +'<div><div style="font-size:12px;font-weight:600;color:rgba(253,243,224,.85)">Ministry-Portal</div>'
+      +'<div style="font-size:11px;color:rgba(253,243,224,.45)">Ministry website — vision, connect, donate, enroll</div></div></a>'
+      +'</div>'
+    );
+
+    html += '</div>';
+    return html;
+  }
+};
+
+/* ── CROSS-PHASE RELATIONSHIP MAP ── */
+var RELATED_PHASES = {
+  'phase01': {
+    related: ['phase02','phase10'],
+    reason:  'Biblical Foundations connects to The Vacuum Effect (how Scripture loss created the vacuum) and Survey of Romans (Paul\'s doctrinal letter)',
+    research: null, books: null
+  },
+  'phase02': {
+    related: ['phase01','phase05','phase06'],
+    reason:  'The Vacuum Effect is caused by conditions covered in Phases 05-06 (church failure) and rooted in Phase 01 (loss of biblical grounding)',
+    research: null, books: null
+  },
+  'phase03': {
+    related: ['phase09','phase12'],
+    reason:  'Integrated Christian Counseling pairs with McMinn\'s professional text (Phase 09) and Servant Leaders training (Phase 12)',
+    research: null, books: 'phase09'
+  },
+  'phase04': {
+    related: ['phase01','phase12'],
+    reason:  'Believing and acting on faith connects to biblical foundations (Phase 01) and servant leadership development (Phase 12)',
+    research: null, books: null
+  },
+  'phase05': {
+    related: ['phase06','phase02','phase03'],
+    reason:  'Church failure in Phase 05 continues in Phase 06 and produces the vacuum in Phase 02; counseling responses in Phase 03',
+    research: null, books: null
+  },
+  'phase06': {
+    related: ['phase05','phase02','phase12'],
+    reason:  'Generation X departure continues Phase 05\'s church failure theme; restoration leads to Phase 12\'s servant leadership',
+    research: null, books: null
+  },
+  'phase07': {
+    related: ['phase08','phase12','phase04'],
+    reason:  'Prayer (Phase 07) and persevering faith (Phase 08) are Denise Ford-Walker\'s paired books; prayer connects to Phase 04 (urgency) and Phase 12 (leadership)',
+    research: null, books: 'praying'
+  },
+  'phase08': {
+    related: ['phase07','phase04','phase12'],
+    reason:  'Holding On pairs with Praying to Know Him (Phase 07) — same author, complementary themes of faith and perseverance',
+    research: null, books: 'holding'
+  },
+  'phase09': {
+    related: ['phase03','phase12','phase07'],
+    reason:  'McMinn\'s professional integration text deepens Phase 03\'s counseling foundations and connects to Phase 12\'s leadership discernment',
+    research: null, books: 'mcminn'
+  },
+  'phase10': {
+    related: ['phase11','phase01','phase13'],
+    reason:  'Romans survey (Modules 1-3) continues in Phase 11 (Modules 4-6) and connects to Galatians (Phase 13) — both Pauline epistles',
+    research: null, books: null
+  },
+  'phase11': {
+    related: ['phase10','phase01','phase13'],
+    reason:  'Romans survey (Modules 4-6) completes Phase 10; Paul\'s letter to Rome and Galatia share the same gospel theology',
+    research: null, books: null
+  },
+  'phase12': {
+    related: ['phase09','phase07','phase03','phase04'],
+    reason:  'Servant leadership synthesis draws on counseling (Phase 09), prayer (Phase 07), integration (Phase 03), and urgency of ministry (Phase 04)',
+    research: null, books: null
+  },
+  'phase13': {
+    related: ['phase10','phase11','phase01'],
+    reason:  'Galatians shares Paul\'s Romans theology of grace and justification by faith; both connect to Phase 01\'s biblical foundations',
+    research: 'galatians', books: null
+  }
+};
+
+/* Return related phase links HTML for a given phase */
+function relatedPhasesBar(phaseId){
+  var rel = RELATED_PHASES[phaseId];
+  if(!rel||!rel.related||!rel.related.length) return '';
+  var html = '<div style="background:rgba(253,243,224,.04);border:1px solid rgba(253,243,224,.1);border-radius:10px;padding:14px 16px;margin-bottom:12px">';
+  html += '<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(201,146,58,.7);margin-bottom:8px">🔗 Related Phases</div>';
+  html += '<div style="font-size:12px;color:rgba(253,243,224,.6);margin-bottom:10px;line-height:1.5">'+rel.reason+'</div>';
+  html += '<div style="display:flex;flex-wrap:wrap;gap:7px">';
+  rel.related.forEach(function(rpid){
+    var rp = PHASES && PHASES.find(function(x){return x.id===rpid;});
+    if(!rp) return;
+    html += '<a href="#/phase/'+rpid+'" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(253,243,224,.06);border:1px solid '+rp.color+';border-radius:7px;text-decoration:none;font-size:12px;font-weight:600;color:rgba(253,243,224,.85)">';
+    html += '<span style="width:18px;height:18px;border-radius:50%;background:'+rp.color+';display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:700">'+rp.num+'</span>';
+    html += rp.title+'</a>';
+  });
+  // Add book link if phase has one
+  if(rel.books){
+    var bookMap={'praying':'📚 Book I: Praying to Know Him','holding':'📚 Book II: Holding On','mcminn':'📚 Book III: McMinn','phase09':'📚 Book III: McMinn'};
+    var bookLabel=bookMap[rel.books]||'📚 Book Curriculum';
+    html += '<a href="#/books" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(201,146,58,.12);border:1px solid rgba(201,146,58,.3);border-radius:7px;text-decoration:none;font-size:12px;font-weight:600;color:rgba(201,146,58,.9)">'+bookLabel+'</a>';
+  }
+  // Add research link if phase 13
+  if(rel.research){
+    html += '<a href="#/research" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(201,146,58,.12);border:1px solid rgba(201,146,58,.3);border-radius:7px;text-decoration:none;font-size:12px;font-weight:600;color:rgba(201,146,58,.9)">📜 Research Archive</a>';
+  }
+  html += '</div></div>';
+  return html;
+}
+
+
 const ENRICHMENT={
   "phase01":[
     {
@@ -5817,6 +6461,8 @@ function renderLesson(){
   if(_tab==='overview') tabContent = buildOverview(p,u,en);
   else if(_tab==='quiz') tabContent = buildQuiz(p,idx,en);
   else if(_tab==='discussion') tabContent = buildDisc(p,idx,en);
+    else if(tab==='resources') tabContent = ROG.resourcesTab(p.id, idx, en);
+    else if(tab==='resources') tabContent = ROG.resourcesTab(p.id, idx, en);
 
   view.innerHTML = `
   <div style="background:var(--gray1);min-height:100vh;padding-top:var(--nav-h)">
@@ -5843,6 +6489,7 @@ function renderLesson(){
         ${tabBtn('overview','📖 Lesson & Resources',p.color)}
         ${en?tabBtn('quiz',`✏️ Quiz (${en.quiz.length})`,p.color):''}
         ${en?tabBtn('discussion',`💬 Discussion (${en.discussion.length})`,p.color):''}
+        ${tabBtn('resources','🔗 Resources',p.color)}
         <a href="https://reflectionsofgracebiblestudies.netlify.app/#/research"
           target="_blank" rel="noopener"
           style="padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;
