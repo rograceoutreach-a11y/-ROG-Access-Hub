@@ -6481,7 +6481,7 @@ function renderLesson(){
         ${p.audiobook?`<a href="${p.audiobook.url}" target="_blank" rel="noopener"
           style="padding:6px 13px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);
           border-radius:8px;color:#fff;font-size:12px;font-weight:700">🎧 Listen</a>`:''}
-        ${p.playlistId?`<a href="https://www.youtube.com/playlist?list=${p.playlistId}" target="_blank" rel="noopener"
+        ${p.playlistId?`<a href="https://www.youtube.com/playlist?list='+p.playlistId+'" target="_blank" rel="noopener"
           style="padding:6px 13px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);
           border-radius:8px;color:#fff;font-size:12px;font-weight:700;margin-left:6px">▶️ Watch</a>`:''}
       </div>
@@ -7050,3 +7050,4 @@ function renderMedia(){
 /script>
 </body>
 </html>
+  
